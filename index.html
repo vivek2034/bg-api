@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Background Remover</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+      background: #f0f0f0;
+    }
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #result {
+      margin-top: 20px;
+      max-width: 100%;
+      height: auto;
+      display: none;
+      border: 2px solid #333;
+    }
+    #loader {
+      display: none;
+      margin-top: 20px;
+      font-size: 18px;
+      color: #007bff;
+    }
+    #downloadBtn {
+      display: none;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #downloadBtn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Remove Background from Image</h2>
+  <input type="file" id="imgInput" accept="image/*" />
+  <br>
+  <button onclick="removeBG()">Remove Background</button>
+  <div id="loader">Processing image, please wait...</div>
+  <br>
+  <img id="result" alt="Result will appear here" />
+  <br>
+  <a id="downloadLink" download>
+    <button id="downloadBtn">Download Result</button>
+  </a>
+
+  <script>
+    async function removeBG() {
+      const fileInput = document.getElementById("imgInput");
+      const resultImg = document.getElementById("result");
+      const loader = document.getElementById("loader");
+      const downloadBtn = document.getElementById("downloadBtn");
+      const downloadLink = document.getElementById("downloadLink");
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Please select an image file.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("image", file);  // 👈 Match FastAPI parameter name
+
+      loader.style.display = "block";
+      resultImg.style.display = "none";
+      downloadBtn.style.display = "none";
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/remove-bg", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error("Server responded with an error.");
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+
+        resultImg.src = url;
+        resultImg.style.display = "block";
+
+        downloadLink.href = url;
+        downloadLink.download = "background_removed.png";  // Set default filename
+        downloadBtn.style.display = "inline-block";
+
+      } catch (err) {
+        alert("Error: " + err.message);
+      } finally {
+        loader.style.display = "none";
+      }
+    }
+  </script>
+
+</body>
+</html>
